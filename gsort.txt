@@ -1,0 +1,169 @@
+
+ GSort.py BETA
+===============
+
+
+A little gcode sorter, tested with:
+
+- pcb-gcode, emc output
+- hp2xx
+
+
+Be sure to read this carefully!
+
+
+Note, 9/2009, "binary" Windoze version available.
+  Due to copyright restrictions, I can not distribute the following
+  Windows(2000/XP/whatever) files:
+
+    ADVAPI32.dll - C:\WINDOWS\system32\ADVAPI32.dll
+    USER32.dll - C:\WINDOWS\system32\USER32.dll
+    SHELL32.dll - C:\WINDOWS\system32\SHELL32.dll
+    KERNEL32.dll - C:\WINDOWS\system32\KERNEL32.dll
+
+  You will need them if you want to try the ".exe" version of "gsort.py"
+  Usually, you already have them on your system ;)
+
+  Note:
+  You still need to run "gsort.exe" from the command line!
+  There are no fancy windows or doors...
+
+	
+
+COPYRIGHT NOTICE:
+=================
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+            
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+                           
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>
+  
+
+
+Notes on using "gsort.py" with pcb-gcode (John Johnson for president!):
+
+- It does work on my machines, with my pcb-gcode setup and a minimum
+  of manual work (see below).
+
+- If it does not work on your system: bad luck
+  -> Feel free to drop me a note on the pcb-gcode group.
+     Let's see what I can do
+
+- Obviously, Python (>= 2.4) is required
+  -> get it from www.python.org
+
+- It has only been tested with EMC-output
+  -> Others MAY work too...
+
+- Tool changes are not supported!
+  -> remove these from the gcode before running gsort.py
+  -> if your machine really needs them, you have to manually add them
+     after gsort has made its changes (*.2gs is the output file)
+
+- program numbers (if any) are not supported
+  -> remove them
+
+- relative move mode is not supported
+  -> not (yet) relevant for pcb-gcode
+
+- arcs are not supported
+  -> not (yet) relevant for pcb-gcode
+
+
+USAGE:
+======
+
+Linux style:
+  Make sure the first line of the script matches your
+  python path, e.g.:
+  #!/usr/bin/python
+
+  gsort.py <filename> [<trigger-level>]
+
+For Windoze users, command line:
+  Make sure python.exe is in your search path.
+
+  python gsort.py <filename> [<trigger-level>]
+
+  For the distributed binary ("gsort.exe") version, command line:
+
+  gsort.exe <filename> [<trigger-level>]
+
+
+This will create 2 files:
+  filename.1gs  <-  ignore this, useful for debug info only
+  filename.2gs  <-  output file with sorted gcode
+
+
+"Trigger-level" defaults to 0.0, if not given.
+It specifies the Z level of the PCB's copper.
+Any Z value below "trigger-level" (e.g: G01Z-0.1 determines the
+start of a block. At the time the Z axis is moved above this
+level, the block has reached its end.
+
+
+- Remove any tool change commands before running gsort.py.
+  Otherwise an error message will abort the script.
+  Running gsort.py only makes sense for the isolation part.
+  It is not suited for drilling...
+  If you need to spot drill holes (I like that function!) you
+  are advised to create multiple ".tap" (or whatever) files and
+  make seperate runs on those...
+
+- run gsort.py
+  The file with the extension "*.2gs" is your output file.
+  
+- The first G00X..Y.. movement is obsolete and can be deleted
+  with CAUTION (CHECK YOUR CODE!).
+  (You will notice that the milling process starts with 2
+  consecutive G00 movements.)
+
+- If your machines needs tool change or other special commands, add them
+  to the ".2gs" file.
+
+- No further gcode commands are added to the end of the file
+  after the last sorted block has been written to the *.2gs file!
+  You may want to add a G00Z<up> command at the end of the file
+  to lift up the Z axis.
+  !!! A M02 command (program stop) has to be added at the end !!!
+  Otherwise EMC2 will complain about it.
+
+- EMC2 users should add a G61 command (exact path mode)
+  to the output file.
+  Note 7/2009:
+  For eagle >=5.0 you should use G64P<precision> to avoid
+  a stuttering machine (Eagle >= 5.0 uses round corners for polygons, now!)
+
+- If you have problems editing the file (e.g. it seems that
+  everything is in a single line (welcome to windoze)):
+  -> Forget about notepad and get a real editor.
+  For Windows, I recommend "Notepad++" (another piece of great
+  free software; google for it).
+
+- If your CNC software can't read the "*.2gs" file...
+  Well, there are hundreds of possible error sources.
+  Just to name a few, which might occur:
+  - missing "%" (or even "%%") at start and end
+  - missing combination of CR or LF (\r, \n)
+  - comments in parenthesis not allowed
+  - and, and, and...
+
+- ...
+
+Feel free to send me any non-working file.
+Let's see what I can do...
+
+
+Have fun
+FMMT666(ASkr), www.askrprojects.net
+
+P.S.:
+And well, GOOD LUCK ;)
