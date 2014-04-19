@@ -1,5 +1,5 @@
 
- GSort.py BETA
+ gsort.py BETA
 ===============
 
 

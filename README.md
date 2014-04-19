@@ -1,7 +1,7 @@
-GSort.py
+gsort.py
 ========
 
-A little GCode sorter to speed up the PCB milling process with [PCB-GCode][1] for [Eagle][2].
+A little G-code sorter to speed up the PCB milling process with [PCB-GCode][1] for [Eagle][2].
 
 For a little more info, including a binary distribution, follow [this link][3]. 
 
