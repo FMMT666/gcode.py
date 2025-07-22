@@ -3,4 +3,6 @@
 !.gitignore
 
 !gsort.py
+!gsort.txt
+
 !README.md

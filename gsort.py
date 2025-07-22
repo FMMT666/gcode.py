@@ -27,11 +27,12 @@
 # - Footer is not implemented:
 #   User always has to add "M02" (or other important stuff right after
 #   the last "G00 Z<up>" command) manually
-# - Tool change commands are not supported (yet)
+# - Tool change commands are not supported (yet); though most of them
+#   will not cause any issues (but they are blocked).
 # - a lot...
 
 
-# ASkr, 7/2025:
+# ASkr, 7/2025; v0.3:
 # - revived for Python 3
 
 # ASkr, 9/2007; v0.2:
@@ -46,14 +47,15 @@ import sys
 from typing import Optional, TextIO
 
 
-sVersion ="v0.3"
+VERSION       = "v0.3"
 
-sHeadSta  = "(*** GS HEADER START)"
-sHeadEnd  = "(*** GS HEADER END)"
-sSplitSta = "(*** GS BLK START)"
-sSplitEnd = "(*** GS BLK END)"
+HEADER_START  = "(*** GS HEADER START)"
+HEADER_END    = "(*** GS HEADER END)"
+SPLIT_START   = "(*** GS BLK START)"
+SPLIT_END     = "(*** GS BLK END)"
+SPLIT_POS     = "(*** GS XXXX YYYY NNNN)"  # 4 letters to be replaced by X<num>, Y<num>, N<num> later on
 
-sNumbers  = "01234567890.- "
+STR_NUMBERS   = "01234567890.- "
 
 
 #############################################################################
@@ -61,7 +63,7 @@ sNumbers  = "01234567890.- "
 ###
 #############################################################################
 def vecLength(p1,p2=None):
-  if p2 == None:
+  if p2 is None:
     return ( p1[0]**2.0 + p1[1]**2.0 ) ** 0.5
   else:
     return ( (p2[0]-p1[0])**2.0 + (p2[1]-p1[1])**2.0  ) ** 0.5
@@ -80,7 +82,7 @@ def tGetNumAfterChar(line,ch):
 
   j = 0
   for i in line[ ls + 1: ]:
-    if sNumbers.count(i) == 0:
+    if STR_NUMBERS.count(i) == 0:
       break
     j += 1
 
@@ -111,7 +113,7 @@ class Blks:
   ###
   ###########################################################################
   def __init__(self):
-    self.BlkLst=[]
+    self.BlkLst = []
 
     
   ###########################################################################
@@ -231,9 +233,10 @@ class GFile:
   def __init__(self):
     print( "MSG: GFile __init__" )
     self.fName: Optional[str]    = None
-    self.fI:    Optional[TextIO] = None
-    self.fO:    Optional[TextIO] = None
-    self.fB:    Optional[TextIO] = None
+    self.fI:    Optional[TextIO] = None  # the input file
+    self.fO:    Optional[TextIO] = None  # the temporary output file "*.1gs"
+    self.fB:    Optional[TextIO] = None  # the final output file     "*.2gs"
+    self.fLog:  Optional[TextIO] = None  # the log file
     
     self.Blks = Blks()
     self.newOrder = []
@@ -273,44 +276,53 @@ class GFile:
   ###
   ###########################################################################
   def fOpen(self,FileName):
+    """
+    Opens the input file and the output files *.1gs, *.2gs and *.log.
+    """
     print( "MSG: GFile fOpen" )
     try:
-      self.fI=open(FileName,"r+t")
+      self.fI = open(FileName,"r+t")
     except:
-      self.fI=None
+      self.fI = None
     
-    if self.fI == None:
-      print( "ERR: ### unable to open input file \""+FileName+"\"" )
+    if self.fI is None:
+      print( "ERR: ### unable to open input file \"" + FileName + "\"" )
       return -1
     else:
-      print( "MSG: opened input file \""+FileName+"\"" )
+      print( "MSG: opened input file \"" + FileName + "\"" )
 
     if FileName.count(".") < 1:
-      tmp=FileName
+      tmp = FileName
     else:
-      tmp=FileName[:FileName.rfind(".")]
+      tmp = FileName[:FileName.rfind(".")]
       
     try:
-      self.fO=open(tmp+".1gs","w+t")
+      self.fO = open( tmp+".1gs", "w+t")
     except:
-      self.fO=None
+      self.fO = None
     
-    if self.fO == None:
-      print( "ERR: ### unable to open output file 1: \""+tmp+".1gs"+"\"" )
+    if self.fO is None:
+      print( "ERR: ### unable to open output file 1: \"" + tmp + ".1gs" + "\"" )
       return -1
     else:
-      print( "MSG: opened output file 1 \""+tmp+".1gs"+"\"" )
+      print( "MSG: opened output file 1 \"" + tmp + ".1gs" + "\"" )
 
     try:
-      self.fB=open(tmp+".2gs","w+t")
+      self.fB = open(tmp + ".2gs","w+t")
     except:
-      self.fB=None
+      self.fB = None
     
-    if self.fB == None:
-      print( "ERR: ### unable to open output file 2: \""+tmp+"\"" )
+    if self.fB is None:
+      print( "ERR: ### unable to open output file 2: \"" + tmp + "\"" )
       return -1
     else:
-      print( "MSG: opened output file 2 \""+tmp+".2gs"+"\"" )
+      print( "MSG: opened output file 2 \"" + tmp + ".2gs" + "\"" )
+
+    if self.fLog is None:
+      try:
+        self.fLog = open( tmp + ".log", "w+t" )
+      except:
+        self.fLog = None
     
     return 1
 
@@ -320,6 +332,9 @@ class GFile:
   ###
   ###########################################################################
   def fClose(self):
+    """
+    Closes all open files.
+    """
     print( "MSG: GFile fClose" )
     try:
       if self.fB is not None:
@@ -328,8 +343,28 @@ class GFile:
         self.fO.close()
       if self.fI is not None:
         self.fI.close()
+      if self.fLog is not None:
+        self.fLog.close()
     except:
       pass
+
+
+  ###########################################################################
+  ### fLog
+  ###
+  ###########################################################################
+  def fLog(self, msg, logtofile = True):
+    """
+    Logs a message to the console and optionally to the log file.
+    """
+    print( msg )
+    
+    if self.fLog is not None and logtofile:
+      try:
+        self.fLog.write( msg + "\n" )
+        self.fLog.flush()
+      except:
+        print( "ERR: ### unable to write to log file" )
 
 
   ###########################################################################
@@ -369,7 +404,6 @@ class GFile:
       print( "     \""+line+"\"" )
       return -1
 
-
     # TESTING WARNING TESTING: temporarily allow tool change commands
     # if tmp.count("T") > 0:
     #   print( "ERR: ### tool change not supported:" )
@@ -379,8 +413,6 @@ class GFile:
       print( "MSG: ### tool change not officially supported" )
       print( "     \""+line+"\"" )
       return 0
-
-
 
     if tmp[0]=="G":
       if tmp[1:3]=="91":
@@ -411,7 +443,7 @@ class GFile:
             
           if cx > 0:
             i = tGetNumAfterChar(tmp2,"X")
-            if i == None:
+            if i is None:
               print( "ERR: ### G00/01 X number error:" ) 
               print( "     \""+line+"\"" )
               return -1
@@ -419,7 +451,7 @@ class GFile:
 
           if cy > 0:
             i = tGetNumAfterChar(tmp2,"Y")
-            if i == None:
+            if i is None:
               print( "ERR: ### G00/01 Y number error:" )
               print( "     \""+line+"\"" )
               return -1
@@ -427,7 +459,7 @@ class GFile:
         else:
           if cz > 0:
             i = tGetNumAfterChar(tmp2,"Z")
-            if i == None:
+            if i is None:
               print( "ERR: ### G00/01 Z number error:" )
               print( "     \""+line+"\"" )
               return -1
@@ -450,6 +482,9 @@ class GFile:
   ###
   ###########################################################################
   def fSplitIn2Out(self,TrigLev):
+    """
+    Splits the G-code into logical blocks based on tool movements and marks these blocks in a new file.
+    """
 
     lnr=1
     blknr=0
@@ -462,7 +497,7 @@ class GFile:
       print( "ERR: ### fSplitIn2Out(): input file not open" )
       return -1
 
-    self.fO.write("\n"+sHeadSta+"\n\n")
+    self.fO.write("\n"+HEADER_START+"\n\n")
 
     while 1:
       tmp = self.fI.readline()
@@ -492,12 +527,13 @@ class GFile:
         blknr += 1
         
         if blknr == 1:
-          self.fO.write( "\n" + sHeadEnd + "\n\n" )
+          self.fO.write( "\n" + HEADER_END + "\n\n" )
         
         print( "MSG: processing Block " + str(blknr) )
 
-        self.fO.write( "\n" + sSplitSta + "\n" )
-        self.fO.write( "(*** X" + str(self.lpos[0]) + "  Y" + str(self.lpos[1]) + " N" + str(blknr) + ")" + "\n" )
+        self.fO.write( "\n" + SPLIT_START + "\n" )
+        self.fO.write( SPLIT_POS.replace("XXXX","X"+str(self.lpos[0])).replace("YYYY","Y"+str(self.lpos[1])).replace("NNNN","N"+str(blknr)) + "\n"  )
+
         self.fO.write( "G00 X" + str(self.lpos[0]) + " Y" + str(self.lpos[1]) + "\n" )
         self.fO.write( tmp + "\n")
         self.sBlks += 1
@@ -507,8 +543,9 @@ class GFile:
       if i == 2:
         self.fO.write( tmp + "\n" )
         if self.sBlks > 0:
-          self.fO.write( sSplitEnd + "\n" )
-          self.fO.write( "(*** X" + str(self.lpos[0]) + "  Y" + str(self.lpos[1]) + " N" + str(blknr) + ")" + "\n\n" )
+          self.fO.write( SPLIT_END + "\n" )
+          self.fO.write( SPLIT_POS.replace("XXXX","X"+str(self.lpos[0])).replace("YYYY","Y"+str(self.lpos[1])).replace("NNNN","N"+str(blknr)) + "\n\n" )
+
         self.tPos = "up"
 
     return 0
@@ -552,12 +589,12 @@ class GFile:
         break
 
       # header is treated as block number 0
-      if tmp.count( sHeadEnd ) > 0:
+      if tmp.count( HEADER_END ) > 0:
         print( "DBG: ADDING HEADER" )
         self.Blks.add( 0, (0,0), (0,0), (1,lnr) )
         
         
-      if tmp.count(sSplitSta) > 0:
+      if tmp.count(SPLIT_START) > 0:
         lsta = lnr
         tmp = self.fI.readline()
         lnr += 1
@@ -566,11 +603,11 @@ class GFile:
           return -1
         
         # tmp now contains coords and block number
-        b1 = tGetNumAfterChar( tmp, "N" )
+        b1 = int( tGetNumAfterChar( tmp, "N" ) )
         x1 = tGetNumAfterChar( tmp, "X" )
         y1 = tGetNumAfterChar( tmp, "Y" )
         
-        if b1 == None or x1 == None or y1 == None:
+        if b1 is None or x1 is None or y1 is None:
           print( "ERR: ### missing X, Y or N in start of block descriptor:" )
           print( "     \""+tmp+"\"" )
           return -1
@@ -582,11 +619,11 @@ class GFile:
             print( "ERR: ### EOF after start of block (aka: \"G00 Z<up>\" is missing)" )
             return -1
             
-          if tmp.count(sSplitSta) > 0:
+          if tmp.count(SPLIT_START) > 0:
             print( "ERR: ### got second start of block at line No.:"+str(lnr) )
             return -1
           
-          if tmp.count(sSplitEnd) > 0:
+          if tmp.count(SPLIT_END) > 0:
             lend = lnr
             tmp = self.fI.readline()
             lnr += 1
@@ -595,18 +632,18 @@ class GFile:
               return -1
             
             # tmp now contains coords and block number
-            b2 = tGetNumAfterChar( tmp, "N" )
+            b2 = int( tGetNumAfterChar( tmp, "N" ) )
             x2 = tGetNumAfterChar( tmp, "X" )
             y2 = tGetNumAfterChar( tmp, "Y" )
 
-            if b2 == None or x2 == None or y2 == None:
+            if b2 is None or x2 is None or y2 is None:
               print( "ERR: ### missing X, Y or N in end of block descriptor:" )
-              print( "     \""+tmp+"\"" )
+              print( "     \"" + tmp + "\"" )
               return -1
         
             if b2 != b1:        
               print( "ERR: ### number mismatch start/end of block:" )
-              print( "     \""+str(b1)+" <-> "+str(b2)+"\"" )
+              print( "     \"" + str(b1) + " <-> " + str(b2) + "\"" )
               return -1
         
             self.Blks.add( b2, (x1,y1), (x2,y2), (lsta,lend) )
@@ -644,7 +681,7 @@ class GFile:
     while 1:
       bnum = blk.findNearest( cpos )
       
-      if bnum == None:
+      if bnum is None:
         break
 
       self.newOrder.append( bnum )
@@ -667,26 +704,28 @@ class GFile:
   def fReadLines(self,fI,larea):
 
     fI.seek(0)
-    sout=[]
+    sout = []
 
-    if larea[0]<1:
-      print( "ERR: ### illegal line number (fReadLines): "+str(larea) )
+    if larea[0] < 1:
+      print( "ERR: ### illegal line number (fReadLines): " + str(larea) )
       return -1
       
-    if larea[1]-larea[0] < 1:
-      print( "ERR: ### illegal amount of lines (fReadLines): "+str(larea) )
+    if larea[1] - larea[0] < 1:
+      print( "ERR: ### illegal amount of lines (fReadLines): " + str(larea) )
       return -1
 
-    for i in range(0,larea[0]-1):
-      tmp=fI.readline()
+    # this is a custom fseek implementation; lol
+    for i in range( 0, larea[0] - 1 ):
+      tmp = fI.readline()
       if not tmp:
-        print( "ERR: ### end of file (fReadLines): "+str(larea) )
+        print( "ERR: ### end of file (fReadLines): " + str(larea) )
         return -1
       
-    for i in range(larea[0],larea[1]+1):
-      tmp=fI.readline()
+    #  now we are where we want to be; read the lines
+    for i in range( larea[0], larea[1] + 1):
+      tmp = fI.readline()
       if not tmp:
-        print( "ERR: ### end of file (fReadLines): "+str(larea) )
+        print( "ERR: ### end of file (fReadLines): " + str(larea) )
         return -1
       sout.append(tmp)
     
@@ -719,10 +758,10 @@ class GFile:
 
     # write the header
     bl = self.Blks.get(0)
-    if bl == None:
-      print( "ERR: ### ups, we lost the header (Blks.get(0))" )
+    if bl is None:
+      print( "ERR: ### oops, we lost the header (Blks.get(0))" )
       return -1
-    tmp=self.fReadLines(self.fI,bl['larea'])
+    tmp = self.fReadLines( self.fI, bl['larea'] )
     if tmp == -1:
       print( "ERR: ### error reading header (fReadLines)" )
       return -1
@@ -733,7 +772,7 @@ class GFile:
     # continue with all other blocks
     for i in self.newOrder:
       bl = self.Blks.get(i)
-      if bl == None:
+      if bl is None:
         print( "ERR: ### unable to find block number " + str(i) )
         return -1
       tmp = self.fReadLines(self.fI,bl['larea'])
@@ -756,10 +795,10 @@ if __name__ == "__main__":
 
   TrigLev = 0.0
 
-  print( "gsort " + sVersion )
+  print( "gsort.py " + VERSION )
 
   if len(sys.argv) < 2:
-    print( "USAGE: gsort <filename> [<trigger-level>]" )
+    print( "USAGE: gsort.py <filename> [<triggerlevel>]" )
     sys.exit(-1)
 
   fileName = sys.argv[1]

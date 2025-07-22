@@ -42,6 +42,7 @@ Originally tested with:
     - some code formatting and notes
     - new .gitignore
     - now tested with CopperCAM (not required though; already sorted)
+    - added log file (almost)
 
 
 ### CHANGES 2007/09/XX:

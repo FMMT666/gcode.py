@@ -3,6 +3,12 @@
 ===============
 
 
+> 2025 WARNING: OLD CONTENT
+> PROVIDED "AS IS"
+> ASkr 7/2025
+
+
+
 A little gcode sorter, tested with:
 
 - pcb-gcode, emc output
