@@ -1,3 +1,6 @@
-*.pyc
-*.nogit.*
-*.html
+*
+
+!.gitignore
+
+!gsort.py
+!README.md

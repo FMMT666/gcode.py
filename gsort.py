@@ -34,28 +34,26 @@
 # ASkr, 7/2025:
 # - revived for Python 3
 
-# ASkr, 16.9.2007; v0.2:
+# ASkr, 9/2007; v0.2:
 # - first tests with hp2xx revealed, that hp2xx uses ";" for comments
 #   These lines are now changed to parenthesis-comments
 
-# ASkr, 1.9.2007, v0.1
+# ASkr, 9/2007, v0.1
 # - initial version
-
-
-
 
 
 import sys
 from typing import Optional, TextIO
 
-sVersion="v0.3"
 
-sHeadSta="(*** GS HEADER START)"
-sHeadEnd="(*** GS HEADER END)"
-sSplitSta="(*** GS BLK START)"
-sSplitEnd="(*** GS BLK END)"
+sVersion ="v0.3"
 
-sNumbers="01234567890.- "
+sHeadSta  = "(*** GS HEADER START)"
+sHeadEnd  = "(*** GS HEADER END)"
+sSplitSta = "(*** GS BLK START)"
+sSplitEnd = "(*** GS BLK END)"
+
+sNumbers  = "01234567890.- "
 
 
 #############################################################################
@@ -64,9 +62,9 @@ sNumbers="01234567890.- "
 #############################################################################
 def vecLength(p1,p2=None):
   if p2 == None:
-    return ( p1[0]**2.0 + p1[1]**2.0 )**0.5
+    return ( p1[0]**2.0 + p1[1]**2.0 ) ** 0.5
   else:
-    return ( (p2[0]-p1[0])**2.0 + (p2[1]-p1[1])**2.0  )**0.5
+    return ( (p2[0]-p1[0])**2.0 + (p2[1]-p1[1])**2.0  ) ** 0.5
 
 
 
@@ -78,23 +76,23 @@ def tGetNumAfterChar(line,ch):
   if line.count(ch) != 1:
     return None
   
-  ls=line.find(ch)
+  ls = line.find(ch)
 
-  j=0
-  for i in line[ls+1:]:
+  j = 0
+  for i in line[ ls + 1: ]:
     if sNumbers.count(i) == 0:
       break
-    j+=1
+    j += 1
 
-  if j==0:
+  if j == 0:
     return None
 
-  tmp=line[ls+1:ls+1+j].strip(" \t")
+  tmp = line[ ls + 1 : ls + 1 + j ].strip(" \t")
 
   try:
-    ret=float(tmp)
+    ret = float(tmp)
   except:
-    ret=None
+    ret = None
 
   return ret
 
@@ -133,11 +131,11 @@ class Blks:
   # epos  = (x,y)
   # larea = (line of block start, line of block end)
   def add(self,blknr,spos,epos,larea):
-    self.BlkLst.append({'blknr':blknr,'arranged':None,'spos':spos,'epos':epos,'larea':larea})
+    self.BlkLst.append( { 'blknr':blknr, 'arranged':None, 'spos':spos, 'epos':epos, 'larea':larea } )
 
     # DEBUG
     if blknr == 0:
-      print( "SIZE AFTER HEADER: "+str(len(self.BlkLst)) )
+      print( "SIZE AFTER HEADER: " + str(len(self.BlkLst)) )
     
 
     
@@ -146,10 +144,10 @@ class Blks:
   ###
   ###########################################################################
   def get(self,blknr):
-    if self.BlkLst==[]:
+    if self.BlkLst == []:
       return None
     for i in self.BlkLst:
-      if i['blknr']==blknr:
+      if i['blknr'] == blknr:
         return i
     return None
 
@@ -159,16 +157,16 @@ class Blks:
   ###
   ###########################################################################
   def pop(self,blknr):
-    if self.BlkLst==[]:
+    if self.BlkLst == []:
       return None
 
-    index=0
+    index = 0
     for i in self.BlkLst:
-      if i['blknr']==blknr:
+      if i['blknr'] == blknr:
         self.BlkLst.pop(index)
-        print( "MSG: KILLED "+str(blknr)+" of grand total "+str(len(self.BlkLst)) )
+        print( "MSG: KILLED " + str(blknr) + " of grand total " + str(len(self.BlkLst)) )
         return 1
-      index+=1
+      index += 1
 
     return 0
 
@@ -186,7 +184,7 @@ class Blks:
   ###
   ###########################################################################
   def getall(self):
-    ret=[]
+    ret = []
     for i in self.BlkLst:
       ret.append(i)
     return ret
@@ -198,23 +196,23 @@ class Blks:
   ###########################################################################
   def findNearest(self,pos):
 
-    dist=99999999.9
-    index=0
-    target=-1
+    dist = 99999999.9
+    index = 0
+    target = -1
 
     for bl in self.BlkLst:
       # skip the header during search
-      if bl['blknr']!=0:
-        i=vecLength(pos,bl['spos'])
-        if i<dist:
-          dist=i
-          target=index
-      index+=1
+      if bl['blknr'] != 0:
+        i = vecLength( pos, bl['spos'] )
+        if i < dist:
+          dist = i
+          target = index
+      index += 1
 
-    if target==-1:
+    if target == -1:
       return None
     
-    return self.BlkLst[target]['blknr']
+    return self.BlkLst[ target ][ 'blknr' ]
 
 
 
@@ -344,35 +342,45 @@ class GFile:
   ###   2 -> Tool up
   ###   3 -> minor fixes to line (use self.nLine for new output!)
   ###########################################################################
-  def fAnalyzeLine(self,line,linenr,triglev):
+  def fAnalyzeLine(self, line, linenr, triglev ):
 #    print "MSG: GFile fAnalyzeFile"
-    tmp=line
-    tmp=tmp.upper()
-    tmp=tmp.strip(" \t")
+    tmp = line
+    tmp = tmp.upper()
+    tmp = tmp.strip(" \t")
     
+    # TODO: the return codes should be strings
+
+
     if len(tmp) < 1:
       return 0
 
     # hack for hp2xx, which implements gcode comments via ";"
-    if tmp[0]==";":
+    if tmp[0] == ";":
       print( "MSG: changed \";\" comment to parenthesis" )
-      line=line.rstrip("\r\n")
-      self.nLine="( "+line+" )"
+      line = line.rstrip("\r\n")
+      self.nLine = "( " + line + " )"
       return 3
     
-    if tmp[0]=="(":
+    if tmp[0] == "(":
       return 0
       
-    if tmp[0]=="N":
+    if tmp[0] == "N":
       print( "ERR: ### program numbers not supported:" )
       print( "     \""+line+"\"" )
       return -1
 
-    if tmp.count("T")>0:
-      print( "ERR: ### tool change not supported:" )
+
+    # TESTING WARNING TESTING: temporarily allow tool change commands
+    # if tmp.count("T") > 0:
+    #   print( "ERR: ### tool change not supported:" )
+    #   print( "     \""+line+"\"" )
+    #   return -1
+    if tmp.count("T") > 0:
+      print( "MSG: ### tool change not officially supported" )
       print( "     \""+line+"\"" )
-      return -1
-      
+      return 0
+
+
 
     if tmp[0]=="G":
       if tmp[1:3]=="91":
@@ -380,48 +388,50 @@ class GFile:
         print( "     \""+line+"\"" )
         return -1
     
+      # TODO: could be G2 or G3: check for two numbers after the G (in general)
       if tmp[1:3]=="02" or tmp[1:3]=="03":
         print( "ERR: ### arcs not supported:" )
         print( "     \""+line+"\"" )
         return -1
 
-      if tmp[1:3]=="00" or tmp[1:3]=="01":
-        tmp2=tmp[3:]
-        tmp2=tmp2.strip(" \t")
+      # TODO: same as for G2, G3; but could be corrected to two digits
+      if tmp[1:3] == "00" or tmp[1:3] == "01":
+        tmp2 = tmp[3:]
+        tmp2 = tmp2.strip(" \t")
         
-        cx=tmp2.count("X")
-        cy=tmp2.count("Y")
-        cz=tmp2.count("Z")
+        cx = tmp2.count("X")
+        cy = tmp2.count("Y")
+        cz = tmp2.count("Z")
         
-        if cx>0 or cy>0:
-          if cz>0:
+        if cx > 0 or cy > 0:
+          if cz > 0:
             print( "ERR: ### moving z at same time as x or y is not supported:" )
             print( "     \""+line+"\"" )
             return -1
             
-          if cx>0:
-            i=tGetNumAfterChar(tmp2,"X")
-            if i==None:
+          if cx > 0:
+            i = tGetNumAfterChar(tmp2,"X")
+            if i == None:
               print( "ERR: ### G00/01 X number error:" ) 
               print( "     \""+line+"\"" )
               return -1
             self.lpos=(i,self.lpos[1])
 
-          if cy>0:
-            i=tGetNumAfterChar(tmp2,"Y")
-            if i==None:
+          if cy > 0:
+            i = tGetNumAfterChar(tmp2,"Y")
+            if i == None:
               print( "ERR: ### G00/01 Y number error:" )
               print( "     \""+line+"\"" )
               return -1
             self.lpos=(self.lpos[0],i)
         else:
-          if cz>0:
-            i=tGetNumAfterChar(tmp2,"Z")
-            if i==None:
+          if cz > 0:
+            i = tGetNumAfterChar(tmp2,"Z")
+            if i == None:
               print( "ERR: ### G00/01 Z number error:" )
               print( "     \""+line+"\"" )
               return -1
-            self.llev=i
+            self.llev = i
             if i < triglev:
               return 1   # tool down
             else:
@@ -455,49 +465,51 @@ class GFile:
     self.fO.write("\n"+sHeadSta+"\n\n")
 
     while 1:
-      tmp=self.fI.readline()
+      tmp = self.fI.readline()
       if not tmp:
         break
         
-      i=self.fAnalyzeLine(tmp,lnr,TrigLev)
+      # TODO: this methods writes the results to "nLine", which is just baaad; needs fix
+      i = self.fAnalyzeLine( tmp, lnr, TrigLev )
 
-      tmp=tmp.rstrip("\r\n")
+      tmp = tmp.rstrip("\r\n")
         
       # an error occured
-      if i<0:
+      if i < 0:
         return -1
         
       # no important stuff in this line
-      if i==0:
+      if i == 0:
         self.fO.write(tmp+"\n")
 
+      # TODO: uses the new line "nLine", which was secretly changed in fAnalyzeLine()
       # some minor changes were applied to the (new) line
-      if i==3:
-        self.fO.write(self.nLine+"\n")
+      if i == 3:
+        self.fO.write( self.nLine + "\n" )
         
       # tool down
-      if i==1:
-        blknr+=1
+      if i == 1:
+        blknr += 1
         
-        if blknr==1:
-          self.fO.write("\n"+sHeadEnd+"\n\n")
+        if blknr == 1:
+          self.fO.write( "\n" + sHeadEnd + "\n\n" )
         
-        print( "MSG: processing Block "+str(blknr) )
+        print( "MSG: processing Block " + str(blknr) )
 
-        self.fO.write("\n"+sSplitSta+"\n")
-        self.fO.write("(*** X"+str(self.lpos[0])+"  Y"+str(self.lpos[1])+" N"+str(blknr)+")"+"\n")
-        self.fO.write("G00 X"+str(self.lpos[0])+" Y"+str(self.lpos[1])+"\n")
-        self.fO.write(tmp+"\n")
-        self.sBlks+=1
-        self.tPos="down"
+        self.fO.write( "\n" + sSplitSta + "\n" )
+        self.fO.write( "(*** X" + str(self.lpos[0]) + "  Y" + str(self.lpos[1]) + " N" + str(blknr) + ")" + "\n" )
+        self.fO.write( "G00 X" + str(self.lpos[0]) + " Y" + str(self.lpos[1]) + "\n" )
+        self.fO.write( tmp + "\n")
+        self.sBlks += 1
+        self.tPos = "down"
         
       # tool up
-      if i==2:
-        self.fO.write(tmp+"\n")
+      if i == 2:
+        self.fO.write( tmp + "\n" )
         if self.sBlks > 0:
-          self.fO.write(sSplitEnd+"\n")
-          self.fO.write("(*** X"+str(self.lpos[0])+"  Y"+str(self.lpos[1])+" N"+str(blknr)+")"+"\n\n")
-        self.tPos="up"
+          self.fO.write( sSplitEnd + "\n" )
+          self.fO.write( "(*** X" + str(self.lpos[0]) + "  Y" + str(self.lpos[1]) + " N" + str(blknr) + ")" + "\n\n" )
+        self.tPos = "up"
 
     return 0
 
@@ -525,10 +537,10 @@ class GFile:
       pass
 
     try:
-      self.fI = open(tmp,"r+t")
-      print( "MSG: re-opened output file 1 (READ)\""+tmp+"\"" )
+      self.fI = open( tmp, "r+t" )
+      print( "MSG: re-opened output file 1 (READ)\"" + tmp + "\"" )
     except:
-      print( "ERR: ### unable to open output file 1 (READ): \""+tmp+"\"" )
+      print( "ERR: ### unable to open output file 1 (READ): \"" + tmp + "\"" )
       return -1
     
     lnr = 0
@@ -540,9 +552,9 @@ class GFile:
         break
 
       # header is treated as block number 0
-      if tmp.count(sHeadEnd) > 0:
+      if tmp.count( sHeadEnd ) > 0:
         print( "DBG: ADDING HEADER" )
-        self.Blks.add(0,(0,0),(0,0),(1,lnr))
+        self.Blks.add( 0, (0,0), (0,0), (1,lnr) )
         
         
       if tmp.count(sSplitSta) > 0:
@@ -554,9 +566,9 @@ class GFile:
           return -1
         
         # tmp now contains coords and block number
-        b1=tGetNumAfterChar(tmp,"N")
-        x1=tGetNumAfterChar(tmp,"X")
-        y1=tGetNumAfterChar(tmp,"Y")
+        b1 = tGetNumAfterChar( tmp, "N" )
+        x1 = tGetNumAfterChar( tmp, "X" )
+        y1 = tGetNumAfterChar( tmp, "Y" )
         
         if b1 == None or x1 == None or y1 == None:
           print( "ERR: ### missing X, Y or N in start of block descriptor:" )
@@ -583,9 +595,9 @@ class GFile:
               return -1
             
             # tmp now contains coords and block number
-            b2=tGetNumAfterChar(tmp,"N")
-            x2=tGetNumAfterChar(tmp,"X")
-            y2=tGetNumAfterChar(tmp,"Y")
+            b2 = tGetNumAfterChar( tmp, "N" )
+            x2 = tGetNumAfterChar( tmp, "X" )
+            y2 = tGetNumAfterChar( tmp, "Y" )
 
             if b2 == None or x2 == None or y2 == None:
               print( "ERR: ### missing X, Y or N in end of block descriptor:" )
@@ -597,7 +609,7 @@ class GFile:
               print( "     \""+str(b1)+" <-> "+str(b2)+"\"" )
               return -1
         
-            self.Blks.add(b2,(x1,y1),(x2,y2),(lsta,lend))
+            self.Blks.add( b2, (x1,y1), (x2,y2), (lsta,lend) )
             break
 
  
@@ -616,7 +628,7 @@ class GFile:
     try:
       self.fI.seek(0)
     except:
-      print( "ERR: ### error rewinding file: \""+self.fI.name+"\"" )
+      print( "ERR: ### error rewinding file: \"" + self.fI.name + "\"" )
       return -1
   
     # oops ;)
@@ -630,22 +642,23 @@ class GFile:
     cpos = ( 0.0, 0.0 )
     
     while 1:
-      bnum = blk.findNearest(cpos)
+      bnum = blk.findNearest( cpos )
       
       if bnum == None:
         break
 
-      self.newOrder.append(bnum)
+      self.newOrder.append( bnum )
       
-      bt = blk.get(bnum)
+      bt = blk.get( bnum )
       if bt != None:
-        cpos = (bt['epos'][0],bt['epos'][1])
-        blk.pop(bnum)
+        cpos = ( bt['epos'][0], bt['epos'][1] )
+        blk.pop( bnum )
       else:
-        print( "ERR: ### unable to find block number "+str(bnum) )
+        print( "ERR: ### unable to find block number " + str(bnum) )
         return -1
 
     return 0
+
 
   ###########################################################################
   ### fReadLines
@@ -741,9 +754,9 @@ class GFile:
 #############################################################################
 if __name__ == "__main__":
 
-  TrigLev=0.0
+  TrigLev = 0.0
 
-  print( "gsort "+sVersion )
+  print( "gsort " + sVersion )
 
   if len(sys.argv) < 2:
     print( "USAGE: gsort <filename> [<trigger-level>]" )
@@ -762,11 +775,11 @@ if __name__ == "__main__":
   
   gF = GFile()
 
-  if gF.fOpen(fileName) < 0:
+  if gF.fOpen( fileName ) < 0:
     gF.fClose()
     sys.exit(-1)
 
-  if gF.fSplitIn2Out(TrigLev) < 0:
+  if gF.fSplitIn2Out( TrigLev ) < 0:
     gF.fClose()
     sys.exit(-1)
 

@@ -18,13 +18,18 @@ Has to be tested, that's while it's now (4/2014) here, on Github.
 
 Originally tested with:
 
- - pcb-gcode, emc output
- - hp2xx 
+ - pcb-gcode with EMC (EMC2, LinuxCNC) post processor
+ - hp2xx
+
+ Also working, but not required (for sorting):
+
+ - CopperCAM in LinuxCNC mode
+
 
 ---
 ## TODO
-    - 2025 cleanup for Python 3
-    - 2025 cleanup
+    - 2025 support tool changes
+    - 2025 support tool changes file splitting (file_T1, file_T2, etc.)
     - 2025 auto LeVeLlLlLing <3
 
 
@@ -34,6 +39,9 @@ Originally tested with:
 ### CHANGES 2025/07/XX:
     - v0.3
     - revived for Python 3
+    - some code formatting and notes
+    - new .gitignore
+    - now tested with CopperCAM (not required though; already sorted)
 
 
 ### CHANGES 2007/09/XX:
