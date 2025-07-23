@@ -43,6 +43,7 @@ Originally tested with:
     - new .gitignore
     - now tested with CopperCAM (not required though; already sorted)
     - added log file (almost)
+    - added length calc & cut marker
 
 
 ### CHANGES 2007/09/XX:

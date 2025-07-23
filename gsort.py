@@ -54,8 +54,11 @@ HEADER_END    = "(*** GS HEADER END)"
 SPLIT_START   = "(*** GS BLK START)"
 SPLIT_END     = "(*** GS BLK END)"
 SPLIT_POS     = "(*** GS XXXX YYYY NNNN)"  # 4 letters to be replaced by X<num>, Y<num>, N<num> later on
+CUT_MARKER    = "(*** GS CUT MARKER LLLL)" # dbg only; 4 letters to be replaced by trace length
 
 STR_NUMBERS   = "01234567890.- "
+
+LVL_MAX_TRACELEN = 5.0   # maximum trace length for auto leveling; assuming mm
 
 
 #############################################################################
@@ -350,10 +353,10 @@ class GFile:
 
 
   ###########################################################################
-  ### fLog
+  ### fPrint
   ###
   ###########################################################################
-  def fLog(self, msg, logtofile = True):
+  def fPrint(self, msg, logtofile = True):
     """
     Logs a message to the console and optionally to the log file.
     """
@@ -376,15 +379,18 @@ class GFile:
   ###   1 -> Tool down
   ###   2 -> Tool up
   ###   3 -> minor fixes to line (use self.nLine for new output!)
+  ###   4 -> line was cut to pieces for auto leveling (use self.nLine)
   ###########################################################################
   def fAnalyzeLine(self, line, linenr, triglev ):
 #    print "MSG: GFile fAnalyzeFile"
     tmp = line
     tmp = tmp.upper()
     tmp = tmp.strip(" \t")
+
+    # new in 2025; should be okay [tm]
+    tmp = tmp.strip("\r\n ")
     
     # TODO: the return codes should be strings
-
 
     if len(tmp) < 1:
       return 0
@@ -401,33 +407,33 @@ class GFile:
       
     if tmp[0] == "N":
       print( "ERR: ### program numbers not supported:" )
-      print( "     \""+line+"\"" )
+      print( "     \"" + line + "\"" )
       return -1
 
     # TESTING WARNING TESTING: temporarily allow tool change commands
     # if tmp.count("T") > 0:
     #   print( "ERR: ### tool change not supported:" )
-    #   print( "     \""+line+"\"" )
+    #   print( "     \"" + line + "\"" )
     #   return -1
     if tmp.count("T") > 0:
       print( "MSG: ### tool change not officially supported" )
-      print( "     \""+line+"\"" )
+      print( "     \"" + line + "\"" )
       return 0
 
     if tmp[0]=="G":
       if tmp[1:3]=="91":
         print( "ERR: ### relative mode not supported:" )
-        print( "     \""+line+"\"" )
+        print( "     \"" + line + "\"" )
         return -1
     
       # TODO: could be G2 or G3: check for two numbers after the G (in general)
       if tmp[1:3]=="02" or tmp[1:3]=="03":
         print( "ERR: ### arcs not supported:" )
-        print( "     \""+line+"\"" )
+        print( "     \"" + line + "\"" )
         return -1
 
       # TODO: same as for G2, G3; but could be corrected to two digits
-      if tmp[1:3] == "00" or tmp[1:3] == "01":
+      if ( LINEARMOVE := ( tmp[1:3] == "01" ) ) or tmp[1:3] == "00":
         tmp2 = tmp[3:]
         tmp2 = tmp2.strip(" \t")
         
@@ -435,27 +441,52 @@ class GFile:
         cy = tmp2.count("Y")
         cz = tmp2.count("Z")
         
+
+        # NEW 2025: calc deltas
+        dx = dy = 0.0
+
+        # X and Y movement
         if cx > 0 or cy > 0:
           if cz > 0:
             print( "ERR: ### moving z at same time as x or y is not supported:" )
             print( "     \""+line+"\"" )
             return -1
-            
+
+          # --- X movement
           if cx > 0:
             i = tGetNumAfterChar(tmp2,"X")
             if i is None:
               print( "ERR: ### G00/01 X number error:" ) 
-              print( "     \""+line+"\"" )
+              print( "     \"" + line + "\"" )
               return -1
-            self.lpos=(i,self.lpos[1])
+            
+            if self.lpos[0] is not None:
+              dx = i - self.lpos[0]
+            self.lpos = ( i, self.lpos[1] )
 
+          # --- Y movement
           if cy > 0:
             i = tGetNumAfterChar(tmp2,"Y")
             if i is None:
               print( "ERR: ### G00/01 Y number error:" )
-              print( "     \""+line+"\"" )
+              print( "     \"" + line + "\"" )
               return -1
-            self.lpos=(self.lpos[0],i)
+            
+            if self.lpos[1] is not None:
+              dy = i - self.lpos[1]
+            self.lpos = ( self.lpos[0], i )
+
+          # --- if auto leveling is enabled; cut traces
+          if cx > 0 or cy > 0:
+            traceLen = vecLength( (dx,dy) )
+            if LINEARMOVE and traceLen > LVL_MAX_TRACELEN:
+              self.fPrint( "MAX: \"" + tmp + "\" -> dx=" + f'{dx:.4f}' + ", dy=" + f'{dy:.4f}' + ", traceLen=" + f'{traceLen:.4f}' )
+              # TODO: cut the line into pieces; no changes for now
+              self.nLine = tmp + "   " + CUT_MARKER.replace("LLLL",f'{traceLen:.4f}')
+              return 4
+
+
+        # only Z movement    
         else:
           if cz > 0:
             i = tGetNumAfterChar(tmp2,"Z")
@@ -469,10 +500,12 @@ class GFile:
             else:
               return 2   # tool up
           
+          # something we don't know was moved; maybe a rotary axis
           else:
             print( "ERR: ### G00/01 command without X, Y or Z:" )
-            print( "     \""+line+"\"" )
+            print( "     \"" + line + "\"" )
             return -1
+
 
     return 0
 
@@ -486,8 +519,8 @@ class GFile:
     Splits the G-code into logical blocks based on tool movements and marks these blocks in a new file.
     """
 
-    lnr=1
-    blknr=0
+    lnr = 1
+    blknr = 0
 
     if self.fO is None:
       print( "ERR: ### fSplitIn2Out(): output file not open" )
@@ -497,7 +530,7 @@ class GFile:
       print( "ERR: ### fSplitIn2Out(): input file not open" )
       return -1
 
-    self.fO.write("\n"+HEADER_START+"\n\n")
+    self.fO.write( "\n" + HEADER_START + "\n\n" )
 
     while 1:
       tmp = self.fI.readline()
@@ -509,20 +542,25 @@ class GFile:
 
       tmp = tmp.rstrip("\r\n")
         
-      # an error occured
+      # --- an error occured
       if i < 0:
         return -1
         
-      # no important stuff in this line
+      # --- no important stuff in this line
       if i == 0:
-        self.fO.write(tmp+"\n")
+        self.fO.write( tmp + "\n" )
 
+      # --- minor changes to the line
       # TODO: uses the new line "nLine", which was secretly changed in fAnalyzeLine()
       # some minor changes were applied to the (new) line
       if i == 3:
         self.fO.write( self.nLine + "\n" )
-        
-      # tool down
+
+      # --- line was cut in smaller segments for auto leveling
+      if i == 4: 
+        self.fO.write( self.nLine + "\n" )
+
+      # --- tool down
       if i == 1:
         blknr += 1
         
@@ -539,7 +577,7 @@ class GFile:
         self.sBlks += 1
         self.tPos = "down"
         
-      # tool up
+      # --- tool up
       if i == 2:
         self.fO.write( tmp + "\n" )
         if self.sBlks > 0:
