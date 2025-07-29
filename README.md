@@ -1,10 +1,13 @@
 gsort.py
 ========
+gsort.py, gsplit.py, glevel.py, gprobe_viewer.py, gprobe.ngc
 
+---
 A little G-Code sorter to speed up the PCB milling process with [PCB-GCode][1] for [Eagle][2].  
 Can sort G-Code paths and eliminate useless travels. Might also be capable of splitting files
-with multiple tools into separate ones.  
-Maybe an auto-levelleleleler might get built int one day.
+with multiple tools into separate ones, then containing only one tool.  
+An auto-levelleleleler is also on the way, so is a (LinuxCNC) probing file and a probe 3D viewer.
+
 
 WARNING, OLD (2007):
 
@@ -30,6 +33,79 @@ Originally (2007-2014) tested with:
  - CopperCAM in LinuxCNC mode
 
 
+----------------------------------------------------------------------------------------------
+## MODULES
+
+Functionality was split into several files.
+
+
+---
+### gsort.py
+
+The classic paths sorter for PCB-GCode.
+
+
+---
+### gplit.py
+
+Splits a single file including multiple tools, e.g.
+
+  - T1 engraver
+  - T2 endmill milling for slots
+  - T3 endmill for contours
+
+into three separate files, each containing only one tool.
+
+
+---
+### glevel.py
+
+An auto level algorithm.  
+All paths exceeding a configurable max length, 5mm by default,
+are split into smaller segments; afterwards, all Z-positions
+are recalculated, based on a grid probed by "gprobe.ngc" below.
+
+
+---
+### gprobe.ngc
+
+A LinuxCNC file for probing the PCB's surface with rectangular grid.  
+Can probe the same grid multiple times to get an average of each point
+(and check your machine's accuracy).
+
+
+---
+### gprobe_flipflop.ngc
+
+Same as above, but with a special HAL configuration which chains in a flipflop
+into the probe signals, to solve this annoying "probe tripped during non-probe move" issues.
+
+
+---
+### gprobe_viewer.py
+
+Just a simple Matplotlib/SciPy 3D viewer of the probed data.  
+Supports multipleprobes per (x,y) position, min, max and average.  
+Can output a height correction table.
+
+This requires
+
+    numpy
+    matplotlib
+    scipy
+
+simply install them, if not already present, with
+
+    pip install numpy matplotlib scipy
+
+Depending on your installation, you might need to type "pip3" above.  
+You can always check which pip belongs to which Python version by executing
+
+    pip --version
+    pip3 --version
+
+
+
 ---
 ## TODO
     - 2025 support tool changes
@@ -50,6 +126,8 @@ Originally (2007-2014) tested with:
     - added length calc & cut marker
     - took me eleven years to notice that the Github name is wrong, lol; corrected
     - added gsplit.py and glevel.py
+    - added gprobe.py, the new 3D probe data viewer and sample PCB data demo
+    - added gprobe.ngc
 
 
 ### CHANGES 2007/09/XX:

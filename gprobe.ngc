@@ -1,0 +1,68 @@
+(PCB PROBE GRID FOR LINUXCNC)
+
+G21       (metric)
+G90       (absolute)
+G61       (exact path mode; or use G64 P0.05)
+
+(*** PREPARE ***)
+G4 P1     (wait for 1 second)
+
+(*** START ***)
+
+
+(TEST-PCB: 75 x 45)
+(5mm grid is a good starting point for most PCBs)
+
+F30
+
+#1 =   0.0  (X start)
+#2 =   5.0  (X increment)
+#3 =   16   (X count, incl. start point)
+
+#4 =   0.0  (Y start)
+#5 =   5.0  (Y increment)
+#6 =   10   (Y count, incl. start point)
+
+#7 =   0.5  (Z safe)
+#8 =  -0.3  (Z probe)
+
+#12 =  3    (repeat everything this often)
+
+
+(If no path is specified, the result file will be written in             )
+(the directory with the machine.ini file; usually ~/linuxcnc/configs/... )
+(One can also specify a different path after the PROBE0PEN, like:        )
+(          /home/whoeveryouare/linuxcnc/ncfiles/gprobe.txt)
+(PROBEOPEN gprobe.txt)
+#11 = 0
+O4 while [#11 LT #12]
+  #9=0 #10=0
+  G0 Z#7
+  O1 while [#9 lt #6]
+    #10=0
+    G0 Y[#4+#5*#9]
+    O2 while [#10 lt #3]
+      O3 if [[#9/2] - fix[#9/2] eq 0]
+        G0 X[#1+#2*#10]
+      O3 else      
+        G0 X[#1+#2*[#3-#10-1]]
+      O3 endif
+
+      G38.2 Z#8  (probe)
+
+      G0 Z#7     (retract)
+
+      #10 = [#10+1]
+    O2 endwhile
+    #9 = [#9+1]
+  O1 endwhile
+ #11 = [#11+1] (increment repetition counter)
+O4 endwhile
+(PROBECLOSE)
+
+
+(*** END ***)
+
+M5      (just in case)
+S0      (just in case)
+M2      (end program)
