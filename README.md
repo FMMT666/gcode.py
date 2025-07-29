@@ -1,7 +1,12 @@
 gsort.py
 ========
 
-A little G-code sorter to speed up the PCB milling process with [PCB-GCode][1] for [Eagle][2].
+A little G-Code sorter to speed up the PCB milling process with [PCB-GCode][1] for [Eagle][2].  
+Can sort G-Code paths and eliminate useless travels. Might also be capable of splitting files
+with multiple tools into separate ones.  
+Maybe an auto-levelleleleler might get built int one day.
+
+WARNING, OLD (2007):
 
 For a little more info, including a binary distribution, follow [this link][3]. 
 
@@ -11,17 +16,16 @@ file (read the readme), I milled hundreds of PCB with it.
 Yep, it works quite fine, but please notice that this code is (yet) from 2007 and might not
 be compatible with newer PCB-GCode (or Eagle) releases.
 
-Has to be tested, that's while it's now (4/2014) here, on Github.
 
 
 ----------------------------------------------------------------------------------------------
 
-Originally tested with:
+Originally (2007-2014) tested with:
 
  - pcb-gcode with EMC (EMC2, LinuxCNC) post processor
  - hp2xx
 
- Also working, but not required (for sorting):
+ Also working (2025), but not required (for sorting):
 
  - CopperCAM in LinuxCNC mode
 
@@ -44,6 +48,8 @@ Originally tested with:
     - now tested with CopperCAM (not required though; already sorted)
     - added log file (almost)
     - added length calc & cut marker
+    - took me eleven years to notice that the Github name is wrong, lol; corrected
+    - added gsplit.py and glevel.py
 
 
 ### CHANGES 2007/09/XX:
