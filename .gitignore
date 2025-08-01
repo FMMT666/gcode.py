@@ -10,6 +10,8 @@
 !gprobe_viewer.py
 !gprobe_demo.txt
 !gprobe_demo_bad.txt
+!gcode_viewer.py
+!gcode_demo.ngc
 
 
 !README.md

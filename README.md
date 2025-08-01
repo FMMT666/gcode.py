@@ -105,16 +105,34 @@ You can always check which pip belongs to which Python version by executing
     pip3 --version
 
 
+---
+### gcode_viewer.py
+
+This loads a G-Code file for levelevellevlevlling inspection.  
+Can also be used to inspect output from the great GCodeRipper.  
+
+Same requirements as the gcode_viewer.py above.
+
+
 
 ---
 ## TODO
+    - gradient analysis in addition to single multi-probe deviation
+    - add images
+    - 2025 auto LeVeLlLlLing <3
     - 2025 support tool changes
     - 2025 support tool changes file splitting (file_T1, file_T2, etc.)
-    - 2025 auto LeVeLlLlLing <3
 
 
 ---
 ## NEWS
+
+### CHANGES 2025/08/XX:
+    - added max deviation analysis for probe (max-min too large for multiple probes)
+    - added bad probe data
+    - added (minimal Z-points only) G-Code viewer to review auto-levelevelleling
+    - added PCB demo G-Code gcode_demo.ngc
+
 
 ### CHANGES 2025/07/XX:
     - v0.3
@@ -128,8 +146,6 @@ You can always check which pip belongs to which Python version by executing
     - added gsplit.py and glevel.py
     - added gprobe.py, the new 3D probe data viewer and sample PCB data demo
     - added gprobe.ngc
-    - added max deviation analysis for probe (max-min too large for multiple probes)
-    - added bad probe data
 
 
 ### CHANGES 2007/09/XX:

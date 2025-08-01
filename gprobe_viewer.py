@@ -1,3 +1,4 @@
+import os
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
@@ -51,9 +52,10 @@ def analyze_max_deviation( data ):
         print(" NONE")
 
 
+
         
 
-def plot( data, enable_minmax = False ):
+def plot( data, enable_minmax = False, only_verts = False ):
     mpl.rcParams["axes3d.mouserotationstyle"] = "azel"
 
     x, y, z = data[:,0], data[:,1], data[:,2]
@@ -109,12 +111,37 @@ def plot( data, enable_minmax = False ):
     z_max = z.max()
     ax.set_zlim(z_min, 1 / SLIDER_START)
 
-    # plot data
-    if enable_minmax:
-        surf = ax.plot_surface(grid_x, grid_y, grid_z_min, cmap='Greens', edgecolor='none', alpha=0.7)
-        surf = ax.plot_surface(grid_x, grid_y, grid_z_max, cmap='Reds', edgecolor='none', alpha=0.7)
 
-    surf = ax.plot_surface(grid_x, grid_y, grid_z_mean, cmap='inferno', edgecolor='none', alpha=0.7)
+
+
+    # quick hack, lol
+    if not only_verts:
+
+        # plot data
+        if enable_minmax:
+            surf = ax.plot_surface(grid_x, grid_y, grid_z_min, cmap='Greens', edgecolor='none', alpha=0.7)
+            surf = ax.plot_surface(grid_x, grid_y, grid_z_max, cmap='Reds', edgecolor='none', alpha=0.7)
+
+        surf = ax.plot_surface(grid_x, grid_y, grid_z_mean, cmap='inferno', edgecolor='none', alpha=0.7)
+
+
+        # ----- smooth the data (does not really belong in this plot function, but here we go)
+        # new grid data
+        z_surf = griddata((grid_x.flatten(), grid_y.flatten()), grid_z_mean.flatten(), (x, y), method='cubic')
+        # if NaN, replace with original value
+        z_surf = np.where(np.isnan(z_surf), z, z_surf)
+
+        # only unique (x, y) pairs with averaged z
+        xy_dict = defaultdict(list)
+        for xi, yi, zi in zip(x, y, z_surf):
+            xy_dict[(xi, yi)].append(zi)
+        x_unique, y_unique, z_unique = [], [], []
+        for (xi, yi), zi_list in xy_dict.items():
+            x_unique.append(xi)
+            y_unique.append(yi)
+            z_unique.append(np.mean(zi_list))
+        data_smoothed = np.column_stack((x_unique, y_unique, z_unique))
+
 
     ax.scatter(x, y, z, c='k', s=10, alpha=0.8)  # Schwarz, klein, halbtransparent
 
@@ -136,6 +163,12 @@ def plot( data, enable_minmax = False ):
     slider.on_changed(update)
     plt.show()
 
+    if only_verts:
+        data_smoothed = None
+
+    return data_smoothed
+
+
 if __name__ == "__main__":
     enable_minmax = False
 
@@ -155,4 +188,17 @@ if __name__ == "__main__":
     if data is not None:
 
         analyze_max_deviation( data )
-        plot( data, enable_minmax )
+        corrdata = plot( data, enable_minmax )
+
+        if "_averaged" in fname:
+            print("Data already averaged, skipping save.")
+        else:
+            # save the corrected data to a new file
+            base, ext = os.path.splitext(fname)
+            if ext:
+                newfname = f"{base}_averaged{ext}"
+            else:
+                newfname = f"{fname}_averaged.txt"
+            print(f"Saving averaged data to {newfname} ...")
+            np.savetxt(newfname, corrdata, fmt="%.5f")
+
