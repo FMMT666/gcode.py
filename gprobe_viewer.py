@@ -7,7 +7,10 @@ from scipy.interpolate import griddata
 from collections import defaultdict
 
 
-SLIDER_START = 10
+SLIDER_START        = 10
+
+ERROR_MAX_OFFSET_Z  = 9.99    # TODO maximum offset across the probing range
+ERROR_DEVIATION_Z   = 0.05    # TODO maximum deviation (min, max) at one (x,y) position
 
 
 def usage():
@@ -18,11 +21,40 @@ def usage():
     print("use the 'minmax' option to enable min/max display.")
 
 
+def load( fname ):
+    try:
+        data = np.loadtxt(fname, usecols=(0, 1, 2))
+    except:
+        print( f"Error loading from {fname}.")
+        return None
 
-def plot( fname, enable_minmax = False ):
+    return data
+
+
+def analyze_max_deviation( data ):
+    x, y, z = data[:,0], data[:,1], data[:,2]
+
+    # in case multiple (x,y) value pairs exist, use the average for z
+    points = defaultdict(list)
+    for xi, yi, zi in zip(x, y, z):
+        points[(xi, yi)].append(zi)
+
+    atLeastOneError = False
+    print("ERROR PROBE DEVIATION Z:")
+    for (xi, yi), zi_list in points.items():
+        if len(zi_list) > 1:
+            deviation = max(zi_list) - min(zi_list)
+            if deviation > ERROR_DEVIATION_Z:
+                atLeastOneError = True
+                print( f" ({xi}, {yi}): min={min(zi_list):.4f}, max={max(zi_list):.4f}, diff={deviation:.4f}")
+    if not atLeastOneError:
+        print(" NONE")
+
+
+        
+
+def plot( data, enable_minmax = False ):
     mpl.rcParams["axes3d.mouserotationstyle"] = "azel"
-
-    data = np.loadtxt( fname, usecols=(0,1,2))
 
     x, y, z = data[:,0], data[:,1], data[:,2]
 
@@ -118,5 +150,9 @@ if __name__ == "__main__":
     if len(sys.argv) > 2 and sys.argv[2].lower() == 'minmax':
         enable_minmax = True
 
-    plot( fname, enable_minmax )
+    data = load( fname )
 
+    if data is not None:
+
+        analyze_max_deviation( data )
+        plot( data, enable_minmax )

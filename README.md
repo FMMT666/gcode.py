@@ -128,6 +128,8 @@ You can always check which pip belongs to which Python version by executing
     - added gsplit.py and glevel.py
     - added gprobe.py, the new 3D probe data viewer and sample PCB data demo
     - added gprobe.ngc
+    - added max deviation analysis for probe (max-min too large for multiple probes)
+    - added bad probe data
 
 
 ### CHANGES 2007/09/XX:
