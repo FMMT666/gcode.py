@@ -62,6 +62,7 @@ def load( fname ):
             # TODO: try/except and error checks if conversion fails
 
 
+            # ----- X
             if 'X' in line:
                 try:
                     x = float( line.split('X')[1].split()[0] )
@@ -72,19 +73,28 @@ def load( fname ):
                 if lastX is not None:
                     x = lastX
 
+            # ----- Y
             if 'Y' in line:
-                y = float( line.split('Y')[1].split()[0] )
+                try:
+                    y = float( line.split('Y')[1].split()[0] )
+                except:
+                    print( f"Error parsing Y coordinate in line no {lineNo}:\n{line}\n" + str(line.split('Y')[1].split()[0]) )
                 lastY = y
             else:
                 if lastY is not None:
                     y = lastY
 
+            # ----- Z
             if 'Z' in line:
-                z = float( line.split('Z')[1].split()[0] )
+                try:
+                    z = float( line.split('Z')[1].split()[0] )
+                except:
+                    print( f"Error parsing Z coordinate in line no {lineNo}:\n{line}\n" + str(line.split('Z')[1].split()[0]) )
                 lastZ = z
             else:
                 if lastZ is not None:
                     z = lastZ
+
         # -----
 
         if x is not None and y is not None and z is not None:

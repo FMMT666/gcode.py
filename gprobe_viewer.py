@@ -32,7 +32,7 @@ def load( fname ):
     return data
 
 
-def analyze_max_deviation( data ):
+def analyze_max_deviation_at_single_point( data ):
     x, y, z = data[:,0], data[:,1], data[:,2]
 
     # in case multiple (x,y) value pairs exist, use the average for z
@@ -41,7 +41,7 @@ def analyze_max_deviation( data ):
         points[(xi, yi)].append(zi)
 
     atLeastOneError = False
-    print("ERROR PROBE DEVIATION Z:")
+    print("ERROR MULTI-PROBE DEVIATION AT POSITION Z:")
     for (xi, yi), zi_list in points.items():
         if len(zi_list) > 1:
             deviation = max(zi_list) - min(zi_list)
@@ -52,7 +52,79 @@ def analyze_max_deviation( data ):
         print(" NONE")
 
 
+def calculate_grid_spacing(data):
+    x, y = data[:, 0], data[:, 1]
+    
+    # Eindeutige x- und y-Werte finden (sortiert)
+    x_unique = sorted(set(x))
+    y_unique = sorted(set(y))
+    
+    # Abstände zwischen benachbarten x-Werten berechnen
+    x_diffs = [x_unique[i+1] - x_unique[i] for i in range(len(x_unique)-1)]
+    
+    # Abstände zwischen benachbarten y-Werten berechnen
+    y_diffs = [y_unique[i+1] - y_unique[i] for i in range(len(y_unique)-1)]
+    
+    # Durchschnittliche Abstände berechnen
+    if x_diffs and y_diffs:
+        avg_x_spacing = sum(x_diffs) / len(x_diffs)
+        avg_y_spacing = sum(y_diffs) / len(y_diffs)
+        avg_spacing = (avg_x_spacing + avg_y_spacing) / 2
+    elif x_diffs:
+        avg_spacing = sum(x_diffs) / len(x_diffs)
+    elif y_diffs:
+        avg_spacing = sum(y_diffs) / len(y_diffs)
+    else:
+        avg_spacing = 0
+    
+    neighbor_radius = 1.5 * avg_spacing
+    
+    print(f"Calculated grid distance: {avg_spacing:.3f}")
+    print(f"Proposed neighbor radius: {neighbor_radius:.3f}")
+    
+    return avg_spacing, neighbor_radius
 
+
+def analyze_max_deviation_from_neighbors(data, threshold_factor=2.0, neighbor_dist=5.1):
+    x, y, z = data[:,0], data[:,1], data[:,2]
+    
+    # Eindeutige (x,y) Punkte mit Mittelwert für z erstellen
+    points = defaultdict(list)
+    for xi, yi, zi in zip(x, y, z):
+        points[(xi, yi)].append(zi)
+    
+    xy_list = list(points.keys())
+    z_mean = [np.mean(points[key]) for key in xy_list]
+    
+    # Nachbar-Differenzen berechnen
+    mean_diffs = []
+    for i, ((xi, yi), zi) in enumerate(zip(xy_list, z_mean)):
+        for j, ((xj, yj), zj) in enumerate(zip(xy_list, z_mean)):
+            if i != j and abs(xi-xj) + abs(yi-yj) < neighbor_dist:
+                mean_diffs.append(abs(zi-zj))
+    
+    if not mean_diffs:
+        print("ERROR NEIGHBOR DEVIATION: No neighbors found!")
+        return
+    
+    mean_diff = np.mean(mean_diffs)
+    threshold = mean_diff * threshold_factor
+    
+    print(f"ERROR NEIGHBOR DEVIATION (> {threshold:.5f}):")
+    atLeastOneError = False
+    
+    for i, ((xi, yi), zi) in enumerate(zip(xy_list, z_mean)):
+        neighbor_diffs = []
+        for j, ((xj, yj), zj) in enumerate(zip(xy_list, z_mean)):
+            if i != j and abs(xi-xj) + abs(yi-yj) < neighbor_dist:
+                neighbor_diffs.append(abs(zi-zj))
+        
+        if neighbor_diffs and min(neighbor_diffs) > threshold:
+            atLeastOneError = True
+            print(f" ({xi}, {yi}): z={zi:.4f}, min_diff={min(neighbor_diffs):.4f}, threshold={threshold:.4f}")
+    
+    if not atLeastOneError:
+        print(" NONE")
         
 
 def plot( data, enable_minmax = False, only_verts = False ):
@@ -113,6 +185,7 @@ def plot( data, enable_minmax = False, only_verts = False ):
 
 
 
+    data_smoothed = None
 
     # quick hack, lol
     if not only_verts:
@@ -187,18 +260,23 @@ if __name__ == "__main__":
 
     if data is not None:
 
-        analyze_max_deviation( data )
+        analyze_max_deviation_at_single_point( data )
+
+        grid_spacing, neighbor_dist = calculate_grid_spacing(data)        
+        analyze_max_deviation_from_neighbors( data, neighbor_dist )
+
         corrdata = plot( data, enable_minmax )
 
         if "_averaged" in fname:
             print("Data already averaged, skipping save.")
         else:
-            # save the corrected data to a new file
-            base, ext = os.path.splitext(fname)
-            if ext:
-                newfname = f"{base}_averaged{ext}"
-            else:
-                newfname = f"{fname}_averaged.txt"
-            print(f"Saving averaged data to {newfname} ...")
-            np.savetxt(newfname, corrdata, fmt="%.5f")
+            if corrdata is not None:
+                # save the corrected data to a new file
+                base, ext = os.path.splitext(fname)
+                if ext:
+                    newfname = f"{base}_averaged{ext}"
+                else:
+                    newfname = f"{fname}_averaged.txt"
+                print(f"Saving averaged data to {newfname} ...")
+                np.savetxt(newfname, corrdata, fmt="%.5f")
 
