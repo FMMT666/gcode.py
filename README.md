@@ -118,6 +118,7 @@ Same requirements as the gcode_viewer.py above.
 ---
 ## TODO
     - gradient analysis in addition to single multi-probe deviation
+    - auto-fix (smooth, average) high deviations
     - add images
     - 2025 auto LeVeLlLlLing <3
     - 2025 support tool changes
@@ -132,6 +133,8 @@ Same requirements as the gcode_viewer.py above.
     - added bad probe data
     - added (minimal Z-points only) G-Code viewer to review auto-levelevelleling
     - added PCB demo G-Code gcode_demo.ngc
+    - added ignoring comments
+    - added replacing G0/G1 by G00/G01
 
 
 ### CHANGES 2025/07/XX:

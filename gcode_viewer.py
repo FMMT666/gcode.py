@@ -12,6 +12,9 @@ import numpy as np
 import sys
 
 
+Z_THRESHOLD = 0.0  # TODO: only coordinates below this value will be plotted
+
+
 def usage():
     print("---\nUsage: python gcode_viewer <nc-file>")
     print("...")
@@ -26,15 +29,31 @@ def load( fname ):
 
     data = []
     lastX = lastY = lastZ = None
-
     codeLetters = "XYZFM"
+    lineNo = 0
 
     for line in fin:
         line = line.upper().strip()
 
+        lineNo += 1
+
         x = y = z = None
 
-        # -----
+        # ----- remove comments
+        if '(' in line and ')' in line:
+            line = line.split('(')[0].strip()
+
+        # ----- correct "G0" and "G1" to "G00" and "G01" if possible
+        # This is far from complete, there are tons of other possibilities, like
+        # G0X, G0Y, G0Z, G0F, etc ...
+        if not 'G00' in line:
+            if 'G0 ' in line:
+                line = line.replace('G0', 'G00 ')
+        if not 'G01' in line:
+            if 'G1 ' in line:
+                line = line.replace('G1', 'G01 ')
+
+        # ----- only lines with G00 or G01 commands
         if 'G00' in line or 'G01' in line:
             # create some spaces for str to float conversion
             for ch in codeLetters:
@@ -44,7 +63,10 @@ def load( fname ):
 
 
             if 'X' in line:
-                x = float( line.split('X')[1].split()[0] )
+                try:
+                    x = float( line.split('X')[1].split()[0] )
+                except:
+                    print( f"Error parsing X coordinate in line no {lineNo}:\n{line}\n" + str(line.split('X')[1].split()[0]) )
                 lastX = x
             else:
                 if lastX is not None:
