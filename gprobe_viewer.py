@@ -15,11 +15,14 @@ ERROR_DEVIATION_Z   = 0.05    # TODO maximum deviation (min, max) at one (x,y) p
 
 
 def usage():
-    print("---\nUsage: python PCB-ProbeView <datafile> [minmax]")
+    print("---\nUsage: python gprobe-viewer <datafile> [minmax]")
     print()
+    print("PCB height probe date viewer and averager.")
+    print("Can also be used to visualize output from GCode-Ripper.")
     print("The data file should contain at least three columns: x, y, z values.")
     print("If multiple (x, y) pairs exist, e.g. from multi-probe data,")
     print("use the 'minmax' option to enable min/max display.")
+    print("The output file will be saved with '_averaged' appended to the filename.")
 
 
 def load( fname ):
