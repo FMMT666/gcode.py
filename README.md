@@ -46,7 +46,7 @@ The classic paths sorter for PCB-GCode.
 
 
 ---
-### gplit.py
+### gsplit.py
 
 Splits a single file including multiple tools, e.g.
 
@@ -82,11 +82,14 @@ into the probe signals, to solve this annoying "probe tripped during non-probe m
 
 
 ---
-### gprobe_viewer.py
+### gprobe_viewer.py (and averager)
 
 Just a simple Matplotlib/SciPy 3D viewer of the probed data.  
 Supports multipleprobes per (x,y) position, min, max and average.  
-Can output a height correction table.
+Can output an averaged height correction table for auto-levellelevler.
+
+![Data of height-probed PCB](images/gprobe_viewer1.png)
+
 
 This requires
 

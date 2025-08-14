@@ -15,7 +15,7 @@ ERROR_DEVIATION_Z   = 0.05    # TODO maximum deviation (min, max) at one (x,y) p
 
 
 def usage():
-    print("---\nUsage: python CNC-ProbeView <datafile> [minmax]")
+    print("---\nUsage: python PCB-ProbeView <datafile> [minmax]")
     print()
     print("The data file should contain at least three columns: x, y, z values.")
     print("If multiple (x, y) pairs exist, e.g. from multi-probe data,")
@@ -222,7 +222,7 @@ def plot( data, enable_minmax = False, only_verts = False ):
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
-    plt.title('CNC Probe Data')
+    plt.title('PCB Probe Data')
 
     # and a nice slider for the z-range
     ax_slider = plt.axes([0.98, 0.2, 0.015, 0.6])
