@@ -111,7 +111,7 @@ if __name__ == "__main__":
     else:
         usage()
         print("Continuing with demo data ...")
-        fname = "gcode_demo.ngc"
+        fname = "gcode_demo_adjusted.ngc"
 
     data = load( fname )
 

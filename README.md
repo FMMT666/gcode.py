@@ -138,6 +138,8 @@ Same requirements as the gcode_viewer.py above.
     - added PCB demo G-Code gcode_demo.ngc
     - added ignoring comments
     - added replacing G0/G1 by G00/G01
+    - added first image \o/
+    - added adjusted (levellevelled) demo PCB
 
 
 ### CHANGES 2025/07/XX:
